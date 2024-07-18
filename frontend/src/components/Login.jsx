@@ -13,6 +13,10 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { login } from '../services/apis';
+
+import { Formik, Form, Field } from 'formik';
+import * as Yup from 'yup';
 
 const FormContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -24,117 +28,96 @@ const FormContainer = styled(Box)(({ theme }) => ({
   }
 }));
 
+const validationSchema = Yup.object().shape({
+  email: Yup.string()
+    .email('Invalid email format')
+    .required('Email is required'),
+  password: Yup.string()
+    .required('Password is required')
+    .min(6, 'Password must be at least 6 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    )
+});
+
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({ email: '', password: '' });
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const validateEmail = (email) => {
-    const re = /\S+@\S+\.\S+/;
-    return re.test(email);
-  };
-
-  const handleEmailChange = (e) => {
-    const email = e.target.value;
-    setEmail(email);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      email: email ? (validateEmail(email) ? '' : 'Invalid email format') : 'Email is required'
-    }));
-  };
-
-  const handlePasswordChange = (e) => {
-    const password = e.target.value;
-    setPassword(password);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      password: password ? '' : 'Password is required'
-    }));
-  };
-
-  const validateForm = () => {
-    let emailError = '';
-    let passwordError = '';
-
-    if (!email) {
-      emailError = 'Email is required';
-    } else if (!validateEmail(email)) {
-      emailError = 'Invalid email format';
-    }
-
-    if (!password) {
-      passwordError = 'Password is required';
-    }
-
-    setErrors({ email: emailError, password: passwordError });
-
-    return !emailError && !passwordError;
-  };
-
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleLogin = () => {
-    if (validateForm()) {
-      // Proceed with login
-      console.log('Logging in:', { email, password });
+  const handleLogin = async (values) => {
+    try {
+      const loginResponse = await login(values.email, values.password);
+      console.log('Logging in:', loginResponse);
+    } catch (error) {
+      console.error('Login error:', error);
     }
   };
 
   return (
     <Container maxWidth={isSmallScreen ? 'sm' : 'xs'}>
-      <FormContainer>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Login
-        </Typography>
-        <TextField
-          label="Email"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          value={email}
-          onChange={handleEmailChange}
-          error={!!errors.email}
-          helperText={errors.email}
-        />
-        <TextField
-          label="Password"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          type={showPassword ? 'text' : 'password'}
-          value={password}
-          onChange={handlePasswordChange}
-          error={!!errors.password}
-          helperText={errors.password}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={handleClickShowPassword}
-                  edge="end"
-                >
-                  {showPassword ? <Visibility /> : <VisibilityOff />}
-                </IconButton>
-              </InputAdornment>
-            )
-          }}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleLogin}
-          sx={{ marginTop: '20px' }}
-        >
-          Login
-        </Button>
-      </FormContainer>
+      <Formik
+        initialValues={{ email: '', password: '' }}
+        validationSchema={validationSchema}
+        onSubmit={(values, { setSubmitting }) => {
+          handleLogin(values);
+          setSubmitting(false);
+        }}
+      >
+        {({ errors, touched }) => (
+          <Form>
+            <FormContainer>
+              <Typography variant="h4" component="h1" gutterBottom>
+                Login
+              </Typography>
+              <Field
+                as={TextField}
+                name="email"
+                label="Email"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                error={touched.email && !!errors.email}
+                helperText={touched.email ? errors.email : ''}
+              />
+              <Field
+                as={TextField}
+                name="password"
+                label="Password"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                type={showPassword ? 'text' : 'password'}
+                error={touched.password && !!errors.password}
+                helperText={touched.password ? errors.password : ''}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <Visibility /> : <VisibilityOff />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{ marginTop: '20px' }}
+              >
+                Login
+              </Button>
+            </FormContainer>
+          </Form>
+        )}
+      </Formik>
     </Container>
   );
 };

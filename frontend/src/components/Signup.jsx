@@ -13,6 +13,10 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { register } from '../services/apis';
+
+import { Formik, Form, Field } from 'formik';
+import * as Yup from 'yup';
 
 const FormContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -24,153 +28,110 @@ const FormContainer = styled(Box)(({ theme }) => ({
   }
 }));
 
+const validationSchema = Yup.object().shape({
+  name: Yup.string()
+    .required('Name is required')
+    .min(3, 'Password must be at least 3 characters'),
+  email: Yup.string()
+    .email('Invalid email format')
+    .required('Email is required'),
+  password: Yup.string()
+    .required('Password is required')
+    .min(6, 'Password must be at least 6 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    )
+});
+
 const SignupPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [name, setName] = useState('');
-  const [errors, setErrors] = useState({ name: '', email: '', password: ''});
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const validateEmail = (email) => {
-    const re = /\S+@\S+\.\S+/;
-    return re.test(email);
-  };
-
-  const validatePassword = (password) => {
-    const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
-    return re.test(password);
-  };
-
-  const validateForm = () => {
-    let nameError = '';
-    let emailError = '';
-    let passwordError = '';
-
-    if (!email) {
-      emailError = 'Email is required';
-    } else if (!validateEmail(email)) {
-      emailError = 'Invalid email format';
+  const handleSignup = async (values) => {
+    try {
+      console.log('Signing up:', values);
+      const registrationResp = await register(values.name, values.email, values.password);
+      console.log("registrationResp", registrationResp);
+    } catch (error) {
+      console.error('Registration error:', error);
     }
-
-    if (!password) {
-      passwordError = 'Password is required';
-    } else if (!validatePassword(password)) {
-      passwordError = 'Password must contain at least 6 characters, including uppercase, lowercase, number, and symbol';
-    }
-
-    if (!name) {
-      nameError = 'Name is required';
-    }
-
-    setErrors({name: nameError, email: emailError, password: passwordError });
-
-    return !nameError && !emailError && !passwordError;
-  };
-
-  const handleNameChange = (e) => {
-    const name = e.target.value;
-    setName(name);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      name: name ? '' : 'Name is required'
-    }));
-  };
-
-  const handleEmailChange = (e) => {
-    const email = e.target.value;
-    setEmail(email);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      email: email ? (validateEmail(email) ? '' : 'Invalid email format') : 'Email is required'
-    }));
-  };
-
-  const handlePasswordChange = (e) => {
-    const password = e.target.value;
-    setPassword(password);
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      password: password
-        ? (validatePassword(password)
-          ? ''
-          : 'Password must contain at least 6 characters, including uppercase, lowercase, number, and symbol')
-        : 'Password is required'
-    }));
-  };
-
-  const handleSignup = () => {
-    if (validateForm()) {
-      console.log('Signing up:', { name, email, password});
-    }
-  };
-
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword);
   };
 
   return (
     <Container maxWidth={isSmallScreen ? 'sm' : 'xs'}>
-      <FormContainer>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Sign Up
-        </Typography>
-        <TextField
-          label="Name"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          value={name}
-          onChange={handleNameChange}
-          error={!!errors.name}
-          helperText={errors.name}
-        />
-        <TextField
-          label="Email"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          value={email}
-          onChange={handleEmailChange}
-          error={!!errors.email}
-          helperText={errors.email}
-        />
-        <TextField
-          label="Password"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          type={showPassword ? 'text' : 'password'}
-          value={password}
-          onChange={handlePasswordChange}
-          error={!!errors.password}
-          helperText={errors.password}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={handleClickShowPassword}
-                  edge="end"
-                >
-                  {showPassword ? <Visibility/> : <VisibilityOff />}
-                </IconButton>
-              </InputAdornment>
-            )
-          }}
-        />
-        
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSignup}
-          sx={{ marginTop: '20px' }}
-        >
-          Sign Up
-        </Button>
-      </FormContainer>
+      <Formik
+        initialValues={{ name: '', email: '', password: '' }}
+        validationSchema={validationSchema}
+        onSubmit={(values, { setSubmitting }) => {
+          handleSignup(values);
+          setSubmitting(false);
+        }}
+      >
+        {({ errors, touched }) => (
+          <Form>
+            <FormContainer>
+              <Typography variant="h4" component="h1" gutterBottom>
+                Sign Up
+              </Typography>
+              <Field
+                as={TextField}
+                name="name"
+                label="Name"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                error={touched.name && !!errors.name}
+                helperText={touched.name ? errors.name : ''}
+              />
+              <Field
+                as={TextField}
+                name="email"
+                label="Email"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                error={touched.email && !!errors.email}
+                helperText={touched.email ? errors.email : ''}
+              />
+              <Field
+                as={TextField}
+                name="password"
+                label="Password"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                type={showPassword ? 'text' : 'password'}
+                error={touched.password && !!errors.password}
+                helperText={touched.password ? errors.password : ''}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <Visibility /> : <VisibilityOff />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{ marginTop: '20px' }}
+              >
+                Sign Up
+              </Button>
+            </FormContainer>
+          </Form>
+        )}
+      </Formik>
     </Container>
   );
 };

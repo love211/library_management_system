@@ -10,7 +10,7 @@ const userRegistration = async (req, resp) => {
     const bodyLength = Object.keys(req.body)?.length;
     if (req.body && bodyLength > 0) {
       const highestUserId = await Users.findOne({}, "id").sort("-id");
-      // console.log("highest user id", highestUserId.id);
+      console.log("highest user id", highestUserId?.id);
       const nextUserId = highestUserId ? highestUserId.id + 1 : 1;
       console.log("id", nextUserId);
       let password = req.body.data.password;

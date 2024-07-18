@@ -4,6 +4,7 @@ const dbConnection = require("./utils/config/db/db.config");
 const cors = require('cors');
 
 const signup = require("./routes/authRoutes/signUpRoute");
+const login = require("./routes/authRoutes/logInRoute");
 
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/auth/signup", signup);
+app.use("/auth/login", login);
 
 
 app.get("/", async (req, resp) => {

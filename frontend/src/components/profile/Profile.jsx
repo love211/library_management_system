@@ -185,10 +185,10 @@ const Profile = () => {
                 </Box>
                 <Box
                   style={{
-                    marginBottom: "0.5rem",
-                    fontWeight: "800",
-                    color: "#031B59",
-                    textAlign: "left",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.8rem",
+                    marginBottom: "1rem",
                   }}
                 >
                   <StyledButton variant="contained" onClick={goToBookList}>

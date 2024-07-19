@@ -90,7 +90,6 @@ const BookList = () => {
 
   const getBooklist = async () => {
     const res = await getBookListData(page);
-    console.log("res", res.meta.totalBooks);
     setPageCount(res.meta.totalBooks);
     setBooks(res.data);
   };
@@ -120,16 +119,6 @@ const BookList = () => {
       getBooklist();
     }
   };
-
-  const handleReturnBook = async (id) => {
-    const returnResponse = await returnBookList(id);
-    if (returnResponse.result === "Success") {
-      setIsViewDialogOpen(false);
-      getBooklist();
-    }
-  };
-
-  console.log("selectedBook", selectedBook)
 
   return (
     <Container>

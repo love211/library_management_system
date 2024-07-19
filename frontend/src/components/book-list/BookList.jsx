@@ -1,11 +1,31 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Container, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, Box, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Divider } from '@mui/material';
-import { Visibility, Edit, Delete } from '@mui/icons-material';
-import { styled } from '@mui/system';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Container,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Typography,
+  Box,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Divider,
+  Pagination,
+} from "@mui/material";
+import { Visibility, Edit, Delete } from "@mui/icons-material";
+import { styled } from "@mui/system";
+import { deleteBook, getBookListData } from "../../services/apis";
 
 const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({
-  textAlign: 'center',
+  textAlign: "center",
   padding: theme.spacing(2),
 }));
 
@@ -14,44 +34,33 @@ const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
 }));
 
 const BookDetailsBox = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
+  display: "flex",
+  flexDirection: "column",
   gap: theme.spacing(1.5),
   padding: theme.spacing(2),
   border: `1px solid ${theme.palette.divider}`,
   borderRadius: theme.shape.borderRadius,
 }));
 
-const dummyBooks = [
-  {
-    id: 1,
-    bookTitle: 'The Great Gatsby',
-    type: 'Fiction',
-    quantity: 10,
-    authorName: 'F. Scott Fitzgerald',
-    price: 15.99,
-    publishedYear: 1925
-  },
-  {
-    id: 2,
-    bookTitle: 'To Kill a Mockingbird',
-    type: 'Fiction',
-    quantity: 8,
-    authorName: 'Harper Lee',
-    price: 10.99,
-    publishedYear: 1960
-  },
-  // Add more dummy data as needed
-];
+const StyledPagination = styled(Pagination)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "flex-end",
+  marginTop: "10px"
+}));
+
+
 
 const BookList = () => {
   const navigate = useNavigate();
-  const [books, setBooks] = useState(dummyBooks);
+  const userData = JSON.parse(localStorage.getItem("token"));
+  const [books, setBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
 
   const handleAddBook = () => {
-    navigate('/add-book');
+    navigate("/add-book");
   };
 
   const handleViewBook = (book) => {
@@ -60,11 +69,14 @@ const BookList = () => {
   };
 
   const handleEditBook = (book) => {
-    navigate('/add-book', { state: { isEdit: true, book } });
+    navigate("/add-book", { state: { isEdit: true, book } });
   };
 
-  const handleDeleteBook = (id) => {
-    setBooks(books.filter(book => book.id !== id));
+  const handleDeleteBook = async(id) => {
+    const res = await deleteBook(id);
+    if(res.status === 200) {
+    getBooklist();
+    }
   };
 
   const handleCloseDialog = () => {
@@ -72,15 +84,37 @@ const BookList = () => {
     setSelectedBook(null);
   };
 
+  const getBooklist = async () => {
+    const res = await getBookListData(page);
+    console.log("res", res.meta.totalBooks);
+    setPageCount(res.meta.totalBooks);
+    setBooks(res.data);
+  };
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  }
+
+  useEffect(() => {
+    getBooklist();
+  }, []);
+
   return (
     <Container>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mt={4}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mt={4}
+      >
         <Typography variant="h4">Book List</Typography>
-        <Button variant="contained" color="primary" onClick={handleAddBook}>
-          Add Book
-        </Button>
+        {userData.role === "admin" && (
+          <Button variant="contained" color="primary" onClick={handleAddBook}>
+            Add Book
+          </Button>
+        )}
       </Box>
-      <TableContainer component={Paper} sx={{ marginTop: '20px' }}>
+      <TableContainer component={Paper} sx={{ marginTop: "20px" }}>
         <Table>
           <TableHead>
             <TableRow>
@@ -96,55 +130,88 @@ const BookList = () => {
           <TableBody>
             {books.map((book) => (
               <TableRow key={book.id}>
-                <TableCell>{book.bookTitle}</TableCell>
+                <TableCell>{book.book_title}</TableCell>
                 <TableCell>{book.type}</TableCell>
                 <TableCell>{book.quantity}</TableCell>
-                <TableCell>{book.authorName}</TableCell>
+                <TableCell>{book.author_name}</TableCell>
                 <TableCell>{book.price}</TableCell>
-                <TableCell>{book.publishedYear}</TableCell>
+                <TableCell>{book.published_year}</TableCell>
                 <TableCell>
                   <IconButton onClick={() => handleViewBook(book)}>
                     <Visibility />
-                  </IconButton>
+                  </IconButton>{
+                    userData?.role == "admin" && (
+                      <>     
                   <IconButton onClick={() => handleEditBook(book)}>
                     <Edit />
                   </IconButton>
-                  <IconButton onClick={() => handleDeleteBook(book.id)}>
+                  <IconButton onClick={() => handleDeleteBook(book.book_id)}>
                     <Delete />
                   </IconButton>
+                      </>
+                    )
+                  }
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
-      <Dialog open={isViewDialogOpen} onClose={handleCloseDialog} fullWidth maxWidth="sm">
+      <Dialog
+        open={isViewDialogOpen}
+        onClose={handleCloseDialog}
+        fullWidth
+        maxWidth="sm"
+      >
         <StyledDialogTitle>Book Details</StyledDialogTitle>
         <StyledDialogContent>
           {selectedBook && (
             <BookDetailsBox>
-              <Typography variant="h6">Title: {selectedBook.bookTitle}</Typography>
+              <Typography variant="h6">
+                Title: {selectedBook.book_title}
+              </Typography>
               <Divider />
               <Typography variant="body1">Type: {selectedBook.type}</Typography>
-              <Typography variant="body1">Quantity: {selectedBook.quantity}</Typography>
-              <Typography variant="body1">Author: {selectedBook.authorName}</Typography>
-              <Typography variant="body1">Price: ${selectedBook.price}</Typography>
-              <Typography variant="body1">Published Year: {selectedBook.publishedYear}</Typography>
+              <Typography variant="body1">
+                Quantity: {selectedBook.quantity}
+              </Typography>
+              <Typography variant="body1">
+                Author: {selectedBook.author_name}
+              </Typography>
+              <Typography variant="body1">
+                Price: ${selectedBook.price}
+              </Typography>
+              <Typography variant="body1">
+                Published Year: {selectedBook.published_year}
+              </Typography>
             </BookDetailsBox>
           )}
         </StyledDialogContent>
-        <DialogActions sx={{ justifyContent: 'space-between', padding: 2 }}>
-          <Button variant="contained" color="primary" onClick={() => console.log('Borrow book:', selectedBook.id)}>
+        <DialogActions sx={{ justifyContent: "space-between", padding: 2 }}>
+          {userData.role === "user" && (
+            <>
+            <Button
+            variant="contained"
+            color="primary"
+            onClick={() => console.log("Borrow book:", selectedBook.id)}
+            >
             Borrow
           </Button>
-          <Button variant="contained" color="secondary" onClick={() => console.log('Return book:', selectedBook.id)}>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => console.log("Return book:", selectedBook.id)}
+            >
             Return
           </Button>
+              </>
+          )}
           <Button variant="outlined" onClick={handleCloseDialog}>
             Close
           </Button>
         </DialogActions>
       </Dialog>
+      <StyledPagination onChange={handlePageChange}  count={Math.ceil(pageCount/10)} />
     </Container>
   );
 };

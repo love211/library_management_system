@@ -16,6 +16,7 @@ import { styled } from '@mui/system';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import * as Yup from 'yup';
+import { addBook, editBook } from '../../services/apis';
 
 const FormContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -48,18 +49,29 @@ const AddBookForm = () => {
 
   const formik = useFormik({
     initialValues: {
-      bookTitle: bookToEdit?.bookTitle || '',
+      bookTitle: bookToEdit?.book_title || '',
       type: bookToEdit?.type || '',
       quantity: bookToEdit?.quantity || '',
-      authorName: bookToEdit?.authorName || '',
+      authorName: bookToEdit?.author_name || '',
       price: bookToEdit?.price || '',
-      publishedYear: bookToEdit?.publishedYear || '',
+      publishedYear: bookToEdit?.published_year || '',
     },
     validationSchema,
-    onSubmit: (values) => {
+    onSubmit:async (values) => {
       console.log(`${isEdit ? 'Editing' : 'Submitting'} book data:`, values);
-      // Submit form data to the server or handle it as needed
-      // Navigate back to the book list
+      if(isEdit){
+        console.log("is edit", bookToEdit);
+        const apiresponse = await editBook(values, bookToEdit?.book_id);
+        console.log("apiresponse", apiresponse)
+        if(apiresponse.status === 200){
+          navigate('/book-list');
+        }
+      }else{
+        const apiresponse = await addBook(values);
+        if(apiresponse.status === 201){
+          navigate('/book-list');
+        }
+      }
       navigate('/book-list');
     },
   });

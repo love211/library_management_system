@@ -17,6 +17,7 @@ import { register } from '../services/apis';
 
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
+import { useNavigate } from 'react-router-dom';
 
 const FormContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -32,6 +33,10 @@ const validationSchema = Yup.object().shape({
   name: Yup.string()
     .required('Name is required')
     .min(3, 'Password must be at least 3 characters'),
+  phone: Yup.string()
+  .required('Phone number is required')
+   .matches(/^[0-9]{10}$/, 'Invalid phone number'),
+  address: Yup.string().required('Please enter the address'),
   email: Yup.string()
     .email('Invalid email format')
     .required('Email is required'),
@@ -46,6 +51,7 @@ const validationSchema = Yup.object().shape({
 
 const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -53,8 +59,11 @@ const SignupPage = () => {
   const handleSignup = async (values) => {
     try {
       console.log('Signing up:', values);
-      const registrationResp = await register(values.name, values.email, values.password);
+      const registrationResp = await register(values);
       console.log("registrationResp", registrationResp);
+      if(registrationResp.status ===201){
+        navigate('/')
+      }
     } catch (error) {
       console.error('Registration error:', error);
     }
@@ -63,7 +72,7 @@ const SignupPage = () => {
   return (
     <Container maxWidth={isSmallScreen ? 'sm' : 'xs'}>
       <Formik
-        initialValues={{ name: '', email: '', password: '' }}
+        initialValues={{ name: '', email: '', password: '', phone: '', address: '',}}
         validationSchema={validationSchema}
         onSubmit={(values, { setSubmitting }) => {
           handleSignup(values);
@@ -86,6 +95,7 @@ const SignupPage = () => {
                 error={touched.name && !!errors.name}
                 helperText={touched.name ? errors.name : ''}
               />
+             
               <Field
                 as={TextField}
                 name="email"
@@ -119,6 +129,26 @@ const SignupPage = () => {
                     </InputAdornment>
                   )
                 }}
+              />
+               <Field
+                as={TextField}
+                name="phone"
+                label="Phone Number"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                error={touched.phone && !!errors.phone}
+                helperText={touched.phone ? errors.phone : ''}
+              />
+              <Field
+                as={TextField}
+                name="address"
+                label="Address"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                error={touched.address && !!errors.address}
+                helperText={touched.address ? errors.address : ''}
               />
               <Button
                 type="submit"

@@ -12,8 +12,12 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
 
   const handleLogin = async (email, password) => {
-    const { token } = await login(email, password);
-    localStorage.setItem('token', token);
+    const res = await login(email, password);
+    const userData = {
+      role: res.data.user_role,
+      token: res.meta.token
+    }
+    localStorage.setItem( "token", JSON.stringify(userData) );
     setIsAuthenticated(true);
   };
 

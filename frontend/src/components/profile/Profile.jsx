@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "@mui/material/Link";
 import {
   Typography,
@@ -8,21 +8,30 @@ import {
   Box,
   Avatar,
   styled,
+  Container,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  IconButton,
+  Pagination,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-
+import { getBookIssueData, returnBookList } from "../../services/apis";
+import { Visibility } from "@mui/icons-material";
 
 // Styled components for custom styling
 const ProfileContainer = styled(Box)`
-  height: 100vh;
   margin: auto;
 `;
 
 const ScrollableContainer = styled(Box)`
-  width:80vw;
+  width: 80vw;
   height: 100%;
   margin: auto;
-  
+
   overflow: auto;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE 11 */
@@ -59,20 +68,56 @@ const StyledButton = styled(Button)`
   background-color: #031b59;
   color: #fff;
   text-transform: capitalize;
-//   width: 120px;
+  //   width: 120px;
   padding: 6px;
 `;
 
+const StyledPagination = styled(Pagination)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "flex-end",
+  marginTop: "10px",
+}));
+
 const Profile = () => {
-    const navigate = useNavigate();
-    const goToBookList = () =>{
-        navigate("/book-list");
-    }
+  const navigate = useNavigate();
+  const goToBookList = () => {
+    navigate("/book-list");
+  };
+  const [userDetails, setUserDetails] = useState({});
+  const [issueData, setIssueData] = useState({});
+  const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
+  const userData = JSON.parse(localStorage.getItem("userData"));
+
+  const getIssueBook = async (Currentpage) => {
+    const issueResponse = await getBookIssueData(userData.id, Currentpage);
+    setUserDetails(issueResponse.data.user);
+    setIssueData(issueResponse.data.issueData);
+    setPageCount(issueResponse.meta.totalBooks);
+  };
+
+  useEffect(() => {
+    getIssueBook(page);
+  }, []);
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+    getIssueBook(newPage);
+  };
+
+  const handleReturn = async (returnId, bookId) => {
+    const response = await returnBookList(returnId, bookId);
+    getIssueBook(page);
+    console.log("resposss", response);
+  };
+
   return (
     <ProfileContainer component="main">
-      <ScrollableContainer  style={{
-            marginTop:'10px'
-          }}>
+      <ScrollableContainer
+        style={{
+          marginTop: "10px",
+        }}
+      >
         <Typography
           variant="h4"
           style={{
@@ -80,13 +125,12 @@ const Profile = () => {
             color: "#031B59",
             textTransform: "uppercase",
             fontWeight: "bold",
-            textAlign:"center",
-            
+            textAlign: "center",
           }}
         >
           Profile
         </Typography>
-        <ProfileCard style={{margin: "auto"}}>
+        <ProfileCard style={{ margin: "auto" }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={3}>
               <ProfileAvatar>
@@ -104,7 +148,7 @@ const Profile = () => {
                   marginBottom: "0.5rem",
                   fontWeight: "800",
                   color: "#031B59",
-                  textAlign: 'left'
+                  textAlign: "left",
                 }}
               >
                 <Link
@@ -112,7 +156,7 @@ const Profile = () => {
                   underline="hover"
                   color="inherit"
                 >
-                  Karanbairwaa
+                  {userDetails?.name}
                 </Link>
               </Typography>
               <Box>
@@ -124,9 +168,7 @@ const Profile = () => {
                     marginBottom: "1rem",
                   }}
                 >
-                  <span style={{ color: "#757575" }}>
-                    karanbairwaa@gmail.com
-                  </span>
+                  <span style={{ color: "#757575" }}>{userData?.email}</span>
                 </Box>
                 <Box
                   style={{
@@ -148,14 +190,62 @@ const Profile = () => {
                     gap: "0.8rem",
                   }}
                 >
-                  <StyledButton variant="contained" onClick={goToBookList}>Borrow another book</StyledButton>
-                  
+                  <StyledButton variant="contained" onClick={goToBookList}>
+                    Borrow another book
+                  </StyledButton>
                 </Box>
               </Box>
             </ProfileInfo>
           </Grid>
         </ProfileCard>
       </ScrollableContainer>
+      <Container>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mt={8}
+        >
+          <Typography variant="h4">Issued Books</Typography>
+        </Box>
+        <TableContainer component={Paper} sx={{ marginTop: "20px" }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Title</TableCell>
+                <TableCell>Issue Date</TableCell>
+                <TableCell>Return Date</TableCell>
+                <TableCell>Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {issueData?.length > 0 &&
+                issueData?.map((book) => (
+                  <TableRow key={book.id}>
+                    <TableCell>{book?.book_title}</TableCell>
+                    <TableCell>{book?.issue_date}</TableCell>
+                    <TableCell>{book?.return_date}</TableCell>
+                    <TableCell>
+                      <Button
+                        onClick={() => handleReturn(book?.id, book?.book_id)}
+                      >
+                        Return
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        {issueData?.length === 0 ? (
+          <Box style={{ marginTop: "10px" }}>No Book Issued </Box>
+        ) : (
+          <StyledPagination
+            onChange={handlePageChange}
+            count={Math.ceil(pageCount / 10)}
+          />
+        )}
+      </Container>
     </ProfileContainer>
   );
 };

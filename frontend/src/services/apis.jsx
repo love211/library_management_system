@@ -68,13 +68,27 @@ const getBookListData = async (page) => {
   return res.json();
 };
 
-const boorowBookList = async (values) => {
-  const data = {
-     book_title: values.bookTitle
-   };
- const res = await fetch(`${base_url}/book/create`, {
+const getBookIssueData = async (userId, page) => {
+  const res = await fetch(`${base_url}/user/${userId}?page=${page}&limit=${10}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  return res.json();
+};
+
+const boorowBookList = async (data) => {
+  console.log("values", data)
+ const res = await fetch(`${base_url}/book/issue`, {
    method: "POST",
    body: JSON.stringify({ data }),
+   headers: { "Content-Type": "application/json" },
+ });
+ return res.json();
+};
+
+const returnBookList = async (issueId, bookId) => {
+ const res = await fetch(`${base_url}/book/return/${issueId}?book_id=${bookId}`, {
+   method: "DELETE",
    headers: { "Content-Type": "application/json" },
  });
  return res.json();
@@ -90,4 +104,4 @@ const deleteBook = async (id) => {
 };
 
 
-export { register, login, addBook, getBookListData, editBook, deleteBook };
+export { register, login, addBook, getBookListData, editBook, deleteBook, boorowBookList, returnBookList, getBookIssueData };

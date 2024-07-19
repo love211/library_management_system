@@ -22,7 +22,12 @@ import {
 } from "@mui/material";
 import { Visibility, Edit, Delete } from "@mui/icons-material";
 import { styled } from "@mui/system";
-import { deleteBook, getBookListData } from "../../services/apis";
+import {
+  boorowBookList,
+  deleteBook,
+  getBookListData,
+  returnBookList,
+} from "../../services/apis";
 
 const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({
   textAlign: "center",
@@ -45,14 +50,13 @@ const BookDetailsBox = styled(Box)(({ theme }) => ({
 const StyledPagination = styled(Pagination)(({ theme }) => ({
   display: "flex",
   justifyContent: "flex-end",
-  marginTop: "10px"
+  marginTop: "10px",
 }));
-
-
 
 const BookList = () => {
   const navigate = useNavigate();
-  const userData = JSON.parse(localStorage.getItem("token"));
+  const userRole = JSON.parse(localStorage.getItem("token"));
+  const userData = JSON.parse(localStorage.getItem("userData"));
   const [books, setBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -72,10 +76,10 @@ const BookList = () => {
     navigate("/add-book", { state: { isEdit: true, book } });
   };
 
-  const handleDeleteBook = async(id) => {
+  const handleDeleteBook = async (id) => {
     const res = await deleteBook(id);
-    if(res.status === 200) {
-    getBooklist();
+    if (res.status === 200) {
+      getBooklist();
     }
   };
 
@@ -93,11 +97,39 @@ const BookList = () => {
 
   const handlePageChange = (event, newPage) => {
     setPage(newPage);
-  }
+  };
 
   useEffect(() => {
     getBooklist();
   }, []);
+
+  const handleBorrowBook = async (viewBookData) => {
+    const currentDate = new Date();
+    const futureDate = new Date(currentDate);
+    futureDate.setDate(currentDate.getDate() + 7);
+    const payload = {
+      book_id: Number(viewBookData?.book_id),
+      book_title: viewBookData?.book_title,
+      issued_to: userData?.id,
+      issue_date: currentDate.toLocaleDateString(),
+      return_date: futureDate.toLocaleDateString(),
+    };
+    const borrowResponse = await boorowBookList(payload);
+    if (borrowResponse.result === "Success") {
+      setIsViewDialogOpen(false);
+      getBooklist();
+    }
+  };
+
+  const handleReturnBook = async (id) => {
+    const returnResponse = await returnBookList(id);
+    if (returnResponse.result === "Success") {
+      setIsViewDialogOpen(false);
+      getBooklist();
+    }
+  };
+
+  console.log("selectedBook", selectedBook)
 
   return (
     <Container>
@@ -108,7 +140,7 @@ const BookList = () => {
         mt={4}
       >
         <Typography variant="h4">Book List</Typography>
-        {userData.role === "admin" && (
+        {userRole.role === "admin" && (
           <Button variant="contained" color="primary" onClick={handleAddBook}>
             Add Book
           </Button>
@@ -128,32 +160,37 @@ const BookList = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {books.map((book) => (
-              <TableRow key={book.id}>
-                <TableCell>{book.book_title}</TableCell>
-                <TableCell>{book.type}</TableCell>
-                <TableCell>{book.quantity}</TableCell>
-                <TableCell>{book.author_name}</TableCell>
-                <TableCell>{book.price}</TableCell>
-                <TableCell>{book.published_year}</TableCell>
-                <TableCell>
-                  <IconButton onClick={() => handleViewBook(book)}>
-                    <Visibility />
-                  </IconButton>{
-                    userData?.role == "admin" && (
-                      <>     
-                  <IconButton onClick={() => handleEditBook(book)}>
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => handleDeleteBook(book.book_id)}>
-                    <Delete />
-                  </IconButton>
-                      </>
-                    )
-                  }
-                </TableCell>
-              </TableRow>
-            ))}
+            {books.map((book) => {
+              return (
+                book.quantity > 0 && (
+                  <TableRow key={book.id}>
+                    <TableCell>{book.book_title}</TableCell>
+                    <TableCell>{book.type}</TableCell>
+                    <TableCell>{book.quantity}</TableCell>
+                    <TableCell>{book.author_name}</TableCell>
+                    <TableCell>{book.price}</TableCell>
+                    <TableCell>{book.published_year}</TableCell>
+                    <TableCell>
+                      <IconButton onClick={() => handleViewBook(book)}>
+                        <Visibility />
+                      </IconButton>
+                      {userRole?.role == "admin" && (
+                        <>
+                          <IconButton onClick={() => handleEditBook(book)}>
+                            <Edit />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => handleDeleteBook(book.book_id)}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
@@ -188,30 +225,26 @@ const BookList = () => {
           )}
         </StyledDialogContent>
         <DialogActions sx={{ justifyContent: "space-between", padding: 2 }}>
-          {userData.role === "user" && (
+          {userRole.role === "user" && (
             <>
-            <Button
-            variant="contained"
-            color="primary"
-            onClick={() => console.log("Borrow book:", selectedBook.id)}
-            >
-            Borrow
-          </Button>
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => console.log("Return book:", selectedBook.id)}
-            >
-            Return
-          </Button>
-              </>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handleBorrowBook(selectedBook)}
+              >
+                Borrow
+              </Button>
+            </>
           )}
           <Button variant="outlined" onClick={handleCloseDialog}>
             Close
           </Button>
         </DialogActions>
       </Dialog>
-      <StyledPagination onChange={handlePageChange}  count={Math.ceil(pageCount/10)} />
+      <StyledPagination
+        onChange={handlePageChange}
+        count={Math.ceil(pageCount / 10)}
+      />
     </Container>
   );
 };

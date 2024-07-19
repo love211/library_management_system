@@ -31,6 +31,16 @@ const userSchema = new mongoose.Schema(
       require: [true, "User Role is a required field."],
       default: "user",
     },
+    address: {
+      type: String,
+    },
+    phone_number: {
+      type: Number,
+      minLength: 10,
+    },
+    borrowed_books: {
+      type: [String]
+    }
   },
   {
     timestamps: true,

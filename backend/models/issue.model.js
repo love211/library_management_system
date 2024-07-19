@@ -8,6 +8,10 @@ const issueSchema = new mongoose.Schema(
       unique: [true, "issue id is a required field."],
       index: true,
     },
+    book_id: {
+      type: Number,
+      required: [true, "Book id is a required field."],
+    },
     book_title: {
       type: String,
       required: [true, "Book title is a required field."],
@@ -18,11 +22,11 @@ const issueSchema = new mongoose.Schema(
       required: [true, "issued_to is a required field."],
     },
     issue_date: {
-      type: Date,
+      type: String,
       required: [true, "issue date is a required field."],
     },
     return_date: {
-      type: Date,
+      type: String,
       required: [true, "return date is a required field."],
     },
   },

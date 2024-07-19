@@ -5,7 +5,8 @@ const cors = require('cors');
 
 const signup = require("./routes/authRoutes/signUpRoute");
 const login = require("./routes/authRoutes/logInRoute");
-const book = require("./routes/bookRoutes")
+const book = require("./routes/bookRoutes");
+const user = require("./routes/userRoutes");
 
 
 const app = express();
@@ -17,11 +18,8 @@ app.use(express.json());
 app.use("/auth/signup", signup);
 app.use("/auth/login", login);
 app.use("/book", book);
+app.use("/user", user);
 
-
-app.get("/", async (req, resp) => {
-resp.send("app is working fine");
-});
 
 app.listen(port, () => {
     console.log(`server is running on port: ${port}`);

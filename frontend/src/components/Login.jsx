@@ -78,9 +78,8 @@ const LoginPage = () => {
 
   const handleFormSubmit = async (values) => {
     try {
-      const loginResponse = await handleLogin(values.email, values.password);
+      await handleLogin(values.email, values.password);
       navigate('/book-list');
-      console.log('Logging in:', loginResponse);
     } catch (error) {
       console.error('Login error:', error);
     }
@@ -94,7 +93,7 @@ const LoginPage = () => {
         </ImageContainer>
         <Container maxWidth={isSmallScreen ? 'sm' : 'md'} sx={{ width: { sm: '50%' }, margin: { sm: "auto" } }}>
           <Formik
-            initialValues={{ email: 'Karan@test3.com', password: 'Karan@123' }}
+            initialValues={{ email: '', password: '' }}
             validationSchema={validationSchema}
             onSubmit={(values, { setSubmitting }) => {
               handleFormSubmit(values);

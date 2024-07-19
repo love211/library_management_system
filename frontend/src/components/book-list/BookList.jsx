@@ -90,7 +90,6 @@ const BookList = () => {
 
   const getBooklist = async () => {
     const res = await getBookListData(page);
-    console.log("res", res.meta.totalBooks);
     setPageCount(res.meta.totalBooks);
     setBooks(res.data);
   };

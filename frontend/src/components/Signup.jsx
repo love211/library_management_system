@@ -58,9 +58,7 @@ const SignupPage = () => {
 
   const handleSignup = async (values) => {
     try {
-      console.log('Signing up:', values);
       const registrationResp = await register(values);
-      console.log("registrationResp", registrationResp);
       if(registrationResp.status ===201){
         navigate('/')
       }

@@ -20,9 +20,11 @@ export const AuthProvider = ({ children }) => {
       email: res.data.email,
       phone: res.data.phone_number,
       address: res.data.address,
+      id: res.data.id,
     }
 
     localStorage.setItem( "token", JSON.stringify(userData) );
+    localStorage.setItem( "userData", JSON.stringify(userData) );
     setIsAuthenticated(true);
   };
 

@@ -120,16 +120,6 @@ const BookList = () => {
     }
   };
 
-  const handleReturnBook = async (id) => {
-    const returnResponse = await returnBookList(id);
-    if (returnResponse.result === "Success") {
-      setIsViewDialogOpen(false);
-      getBooklist();
-    }
-  };
-
-  console.log("selectedBook", selectedBook)
-
   return (
     <Container>
       <Box

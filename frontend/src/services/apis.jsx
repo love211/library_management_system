@@ -76,6 +76,14 @@ const getBookIssueData = async (userId, page) => {
   return res.json();
 };
 
+const getUserDataForAdmin = async (page) => {
+  const res = await fetch(`${base_url}/user?page=${page}&limit=${10}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  return res.json();
+};
+
 const boorowBookList = async (data) => {
   console.log("values", data)
  const res = await fetch(`${base_url}/book/issue`, {
@@ -104,4 +112,4 @@ const deleteBook = async (id) => {
 };
 
 
-export { register, login, addBook, getBookListData, editBook, deleteBook, boorowBookList, returnBookList, getBookIssueData };
+export { register, login, addBook, getBookListData, editBook, deleteBook, boorowBookList, returnBookList, getBookIssueData,getUserDataForAdmin };

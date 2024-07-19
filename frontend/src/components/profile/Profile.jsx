@@ -8,7 +8,6 @@ import {
   Box,
   Avatar,
   styled,
-  Container,
   TableContainer,
   Table,
   TableHead,
@@ -16,11 +15,17 @@ import {
   TableCell,
   TableBody,
   IconButton,
+  Container,
+  Dialog,
+  DialogTitle,
   Pagination,
+  DialogContent,
+  Divider,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { getBookIssueData, returnBookList } from "../../services/apis";
 import { Visibility } from "@mui/icons-material";
+import { getUserDataForAdmin } from "../../services/apis";
 
 // Styled components for custom styling
 const ProfileContainer = styled(Box)`
@@ -72,38 +77,79 @@ const StyledButton = styled(Button)`
   padding: 6px;
 `;
 
+
+const StyledDialogTitle = styled(DialogTitle)(({ theme }) => ({
+  textAlign: "center",
+  padding: theme.spacing(2),
+}));
+
+const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
+  padding: theme.spacing(3),
+}));
+
+const BookDetailsBox = styled(Box)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing(1.5),
+  padding: theme.spacing(2),
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: theme.shape.borderRadius,
+}));
+
 const StyledPagination = styled(Pagination)(({ theme }) => ({
   display: "flex",
   justifyContent: "flex-end",
-  marginTop: "10px",
+   marginTop: "20px",
+  marginBottom: "20px"
+
 }));
 
 const Profile = () => {
   const navigate = useNavigate();
-  const goToBookList = () => {
-    navigate("/book-list");
-  };
   const [userDetails, setUserDetails] = useState({});
+  const [userList, setUserList] = useState([]);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState({});
   const [issueData, setIssueData] = useState({});
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
-  const userData = JSON.parse(localStorage.getItem("userData"));
+  const [pageCountUser, setPageCountUser] = useState(1);
+  const currentUser = JSON.parse(localStorage.getItem("userData"));
+  console.log("currentUser", currentUser)
+  const userData = JSON.parse(localStorage.getItem("token"));
+  const goToBookList = () => {
+    navigate("/book-list");
+  };
+
+  const handleCloseDialog = () => {
+    setIsViewDialogOpen(false);
+  };
+
+  const getUserList = async (page) => {
+    const res = await getUserDataForAdmin(page);
+    setUserList(res.data);
+    setPageCount(res.meta.totalUsers);
+  };
+
+  const handleViewUser = (user) => {
+    setIsViewDialogOpen(true);
+    setSelectedUser(user);
+  };
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  }
 
   const getIssueBook = async (Currentpage) => {
-    const issueResponse = await getBookIssueData(userData.id, Currentpage);
+    const issueResponse = await getBookIssueData(currentUser.id, Currentpage);
     setUserDetails(issueResponse.data.user);
-    setIssueData(issueResponse.data.issueData);
-    setPageCount(issueResponse.meta.totalBooks);
+    setIssueData(issueResponse?.data?.issueData);
+    setPageCountUser(issueResponse?.meta?.totalBooks);
   };
 
   useEffect(() => {
     getIssueBook(page);
   }, []);
-
-  const handlePageChange = (event, newPage) => {
-    setPage(newPage);
-    getIssueBook(newPage);
-  };
 
   const handleReturn = async (returnId, bookId) => {
     const response = await returnBookList(returnId, bookId);
@@ -111,8 +157,83 @@ const Profile = () => {
     console.log("resposss", response);
   };
 
+  useEffect(() => {
+    getUserList(page);
+  }, [page]);
   return (
     <ProfileContainer component="main">
+      {userData.role === "admin" ? (
+        <Container>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            mt={8}
+          >
+            <Typography variant="h4">User List</Typography>
+          </Box>
+          <TableContainer component={Paper} sx={{ marginTop: "20px" }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Username</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Phone Number</TableCell>
+
+                  <TableCell>View</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {userList && userList?.map((user) => {
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell align="">
+                        {user.phon_number ?? "---"}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton onClick={() => handleViewUser(user)}>
+                          <Visibility />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Dialog
+            open={isViewDialogOpen}
+            onClose={handleCloseDialog}
+            fullWidth
+            maxWidth="sm"
+          >
+            <StyledDialogTitle>Book Details</StyledDialogTitle>
+            <StyledDialogContent>
+              {selectedUser && (
+                <BookDetailsBox>
+                  <Typography variant="h6">
+                    Name: {selectedUser.name}
+                  </Typography>
+                  <Divider />
+                  <Typography variant="body1">
+                    Email: {selectedUser.email}
+                  </Typography>
+                  <Typography variant="body1">
+                    Phone: {selectedUser.phon_number}
+                  </Typography>
+                  <Typography variant="body1">
+                    Address: {selectedUser.address}
+                  </Typography>
+                </BookDetailsBox>
+              )}
+            </StyledDialogContent>
+          </Dialog>
+          <StyledPagination onChange={handlePageChange}  count={Math.ceil(pageCount/10)} />
+        </Container>
+      ) : (
+        <>
       <ScrollableContainer
         style={{
           marginTop: "10px",
@@ -168,7 +289,7 @@ const Profile = () => {
                     marginBottom: "1rem",
                   }}
                 >
-                  <span style={{ color: "#757575" }}>{userData?.email}</span>
+                  <span style={{ color: "#757575" }}>{currentUser?.email}</span>
                 </Box>
                 <Box
                   style={{
@@ -243,10 +364,12 @@ const Profile = () => {
         ) : (
           <StyledPagination
             onChange={handlePageChange}
-            count={Math.ceil(pageCount / 10)}
+            count={Math.ceil(pageCountUser / 10)}
           />
         )}
       </Container>
+       </>
+      )}
     </ProfileContainer>
   );
 };

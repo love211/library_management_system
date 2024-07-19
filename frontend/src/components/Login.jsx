@@ -94,7 +94,7 @@ const LoginPage = () => {
         </ImageContainer>
         <Container maxWidth={isSmallScreen ? 'sm' : 'md'} sx={{ width: { sm: '50%' }, margin: { sm: "auto" } }}>
           <Formik
-            initialValues={{ email: '', password: '' }}
+            initialValues={{ email: 'Karan@test3.com', password: 'Karan@123' }}
             validationSchema={validationSchema}
             onSubmit={(values, { setSubmitting }) => {
               handleFormSubmit(values);

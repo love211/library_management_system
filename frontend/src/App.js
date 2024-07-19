@@ -7,6 +7,7 @@ import BookList from './components/book-list/BookList';
 import Header from './components/Header';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoutes';
+import Profile from './components/profile/Profile';
 
 function App() {
   return (
@@ -22,6 +23,9 @@ function App() {
             </Route>
             <Route path="/book-list" element={<PrivateRoute />}>
               <Route path="/book-list" element={<BookList />} />
+            </Route>
+            <Route path="/profile" element={<PrivateRoute />}>
+              <Route path="/profile" element={<Profile />} />
             </Route>
           </Routes>
         </Router>

@@ -58,11 +58,9 @@ const AddBookForm = () => {
     },
     validationSchema,
     onSubmit:async (values) => {
-      console.log(`${isEdit ? 'Editing' : 'Submitting'} book data:`, values);
       if(isEdit){
-        console.log("is edit", bookToEdit);
+
         const apiresponse = await editBook(values, bookToEdit?.book_id);
-        console.log("apiresponse", apiresponse)
         if(apiresponse.status === 200){
           navigate('/book-list');
         }
